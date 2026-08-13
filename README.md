@@ -1,21 +1,81 @@
-## TemplateDevEnv
-_For Kotlin see [TemplateDevEnvKt](https://github.com/CleanroomMC/TemplateDevEnvKt)_
+# CanoeEditionForgeDevEnv
 
-Template workspace for modding Minecraft 1.12.2. Licensed under MIT, it is made for public use.
+Multi-module template for Minecraft 1.12.2 Forge mod development.
 
-This template runs on **Java 25**, **Gradle 9.7.0** + **[RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle) 2.0.3** + **Forge 14.23.5.2847**.
+This template runs on **Java 25**, **Gradle 9.7.0**, **RetroFuturaGradle 2.0.3**, and **Forge 14.23.5.2847**.
 
-With **coremod and mixin support** that is easy to configure.
+## Start using the template
 
-### Instructions:
+1. Create a repository from this template and clone it locally.
+2. Configure IntelliJ IDEA to use Java 25 for Gradle.
+3. Open the repository root and import the root `build.gradle` as a Gradle project.
+4. Run `listMods` to confirm that the example module was discovered.
 
-1. Click `use this template` at the top.
-2. Clone the repository that you have created with this template to your local machine.
-3. Make sure IDEA is using Java 25 for Gradle before you sync the project. Verify this by going to IDEA's `Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JVM`.
-4. Open the project folder in IDEA. When prompted, click "Load Gradle Project" as it detects the `build.gradle`, if you weren't prompted, right-click the project's `build.gradle` in IDEA, select `Link Gradle Project`, after completion, hit `Refresh All` in the gradle tab on the right.
-5. Run gradle tasks such as `runClient` and `runServer` in the IDEA gradle tab, or use the auto-imported run configurations like `1. Run Client`.
+The root project is only an aggregator. Each mod lives under `modules/<modid>/` and gets the shared build logic from `gradle/scripts/mod-build.gradle`.
 
-### Notes:
-- Dependencies script in [gradle/scripts/dependencies.gradle](gradle/scripts/dependencies.gradle), explanations are commented in the file.
-- Publishing script in [gradle/scripts/publishing.gradle](gradle/scripts/publishing.gradle).
-- When writing Mixins on IntelliJ, it is advisable to use latest [MinecraftDev Fork for RetroFuturaGradle](https://github.com/eigenraven/MinecraftDev/releases).
+## Module layout
+
+The included example module is deliberately complete and can be copied as a starting point:
+
+```text
+modules/
+└── modid/
+    ├── gradle.properties
+    ├── tags.properties
+    ├── CHANGELOG.md
+    └── src/main/
+        ├── java/com/example/modid/ExampleMod.java
+        └── resources/
+            ├── mcmod.info
+            └── pack.mcmeta
+```
+
+`settings.gradle` automatically includes every directory under `modules/` that contains a `gradle.properties` file. The module's `gradle.properties` contains its mod ID, name, package, version, mappings, and publishing options.
+
+## Add another mod
+
+Copy `modules/modid/` to a new directory, then update at least these values in the copied module's `gradle.properties`:
+
+```properties
+mod_id = examplemod
+mod_name = Example Mod
+root_package = com.example.examplemod
+```
+
+Also update the Java package and resource metadata placeholders. After reloading Gradle, the new module is available as `:examplemod`.
+
+For module-specific dependencies or Gradle customization, create `modules/examplemod/extra.gradle`:
+
+```groovy
+repositories {
+    maven { url = 'https://example.invalid/maven' }
+}
+
+dependencies {
+    implementation project(':modid')
+    // compileOnly rfg.deobf('curse.maven:some-mod-123456:7890123')
+}
+```
+
+The `implementation project(':modid')` line makes the example module available during compilation and runtime. Use `compileOnly` for optional integrations that should not be bundled as a required dependency.
+
+## Common commands
+
+```powershell
+# List modules discovered from modules/
+.\gradlew.bat listMods
+
+# Build every module
+.\gradlew.bat buildAllMods
+
+# Build one module
+.\gradlew.bat :modid:build
+
+# Run one module in the development client/server
+.\gradlew.bat :modid:runClient
+.\gradlew.bat :modid:runServer
+```
+
+Artifacts are written to `modules/<modid>/build/libs/`.
+
+Shared dependency and publishing behavior is documented in `gradle/scripts/dependencies.gradle` and `gradle/scripts/publishing.gradle`. Mixin and coremod options remain configurable per module in its `gradle.properties`.
